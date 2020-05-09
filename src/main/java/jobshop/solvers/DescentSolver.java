@@ -10,6 +10,7 @@ import jobshop.Schedule;
 import jobshop.Solver;
 import jobshop.encodings.ResourceOrder;
 import jobshop.encodings.Task;
+import jobshop.solvers.GreedySolver.Priority;
 
 public class DescentSolver implements Solver {
 
@@ -80,7 +81,53 @@ public class DescentSolver implements Solver {
 
     @Override
     public Result solve(Instance instance, long deadline) {
-        throw new UnsupportedOperationException();
+
+    	
+        Schedule s = new GreedySolver(Priority.EST_LRPT).solve(instance, deadline).schedule;  
+        ResourceOrder best_order = new ResourceOrder(s);
+      
+
+        int obj = s.makespan();
+        
+        List<Block> block_list = blocksOfCriticalPath(best_order);
+     
+        for (int i=0 ; i<block_list.size(); i++) {
+        	Block block = block_list.get(i);
+        	
+        	List<Swap> neighbors = neighbors(block);
+        	
+        	Swap best_voisin = new Swap(0, 0, 0);
+        	int best_makespan;
+        	
+        	for (int vois1 = 0; vois1<neighbors.size(); vois1++) {
+    	        ResourceOrder order1 = new ResourceOrder(s);
+
+        		neighbors.get(vois1).applyOn(order1);
+        		int obj1 = order1.toSchedule().makespan();
+        		
+    			best_makespan = obj1;
+
+        		for (int vois2 =0; vois2< neighbors.size()-1;vois2++) {
+        	        ResourceOrder order2 = new ResourceOrder(s);
+
+        			neighbors.get(vois2).applyOn(order2);
+            		int obj2 = order2.toSchedule().makespan();
+            		
+            		if(obj1<obj2) {
+            			best_makespan = obj1;
+            			best_voisin = neighbors.get(vois1);
+            		}else {
+            			best_voisin = neighbors.get(vois2);
+            		}
+        		}	
+        	}
+        	
+        	
+        	
+        }
+
+        Schedule res = order.toSchedule();
+	    return new Result(instance, res, Result.ExitCause.Timeout);
     }
 
     /** Returns a list of all blocks of the critical path. */
