@@ -75,6 +75,8 @@ public class DescentSolver implements Solver {
         	Task temp = order.tasksByMachine[this.machine][this.t1];
         	order.tasksByMachine[this.machine][this.t1] = order.tasksByMachine[this.machine][this.t2];
         	order.tasksByMachine[this.machine][this.t2] = temp;
+        	
+ 
         }
     }
 
@@ -83,51 +85,59 @@ public class DescentSolver implements Solver {
     public Result solve(Instance instance, long deadline) {
 
     	
-        Schedule s = new GreedySolver(Priority.EST_LRPT).solve(instance, deadline).schedule;  
-        ResourceOrder best_order = new ResourceOrder(s);
-      
-
-        int obj = s.makespan();
+        Schedule sol_ini = new GreedySolver(Priority.EST_LRPT).solve(instance, deadline).schedule;  
+              
         
-        List<Block> block_list = blocksOfCriticalPath(best_order);
-     
-        for (int i=0 ; i<block_list.size(); i++) {
-        	Block block = block_list.get(i);
+        boolean found_best = true;
+        // on continue a chercher tant que la solution s'améliore
+        while (found_best ) {
         	
-        	List<Swap> neighbors = neighbors(block);
-        	
-        	Swap best_voisin = new Swap(0, 0, 0);
-        	int best_makespan;
-        	
-        	for (int vois1 = 0; vois1<neighbors.size(); vois1++) {
-    	        ResourceOrder order1 = new ResourceOrder(s);
+        	if(System.currentTimeMillis() > deadline) {
+    			return new Result(instance, sol_ini, Result.ExitCause.Timeout);
+        	}else {
+        		found_best = false;
+                ResourceOrder best_order = new ResourceOrder(sol_ini);
+                ResourceOrder test_order = new ResourceOrder(sol_ini);
 
-        		neighbors.get(vois1).applyOn(order1);
-        		int obj1 = order1.toSchedule().makespan();
-        		
-    			best_makespan = obj1;
+                
+            	List<Block> block_list = blocksOfCriticalPath(best_order);
+                
+                for (int i=0 ; i<block_list.size(); i++) {
+                	
+                	Block block = block_list.get(i);
+                	System.out.println("first");
+                	System.out.println(block.firstTask);
+                	System.out.println("last");
+                	System.out.println(block.lastTask);
+                	
+                	List<Swap> neighbors_list = neighbors(block);
+                	System.out.println(neighbors_list.size());
+                	
+                	for (int n = 0; n< neighbors_list.size(); n++) {
+                    	
 
-        		for (int vois2 =0; vois2< neighbors.size()-1;vois2++) {
-        	        ResourceOrder order2 = new ResourceOrder(s);
+                		neighbors_list.get(n).applyOn(test_order);
+                		
+                		int new_makespan = test_order.toSchedule().makespan();
+                		//si le makespan est meilleur on update la solution
+            			if(new_makespan < sol_ini.makespan() ) {
+            				sol_ini= test_order.toSchedule();
+            				found_best = true;
+            			}else {
+            				//sinon on revient a la solution 
+                    		neighbors_list.get(n).applyOn(test_order);
 
-        			neighbors.get(vois2).applyOn(order2);
-            		int obj2 = order2.toSchedule().makespan();
-            		
-            		if(obj1<obj2) {
-            			best_makespan = obj1;
-            			best_voisin = neighbors.get(vois1);
-            		}else {
-            			best_voisin = neighbors.get(vois2);
-            		}
-        		}	
+            			}
+
+                			
+                	}
+                }
         	}
         	
-        	
-        	
         }
-
-        Schedule res = order.toSchedule();
-	    return new Result(instance, res, Result.ExitCause.Timeout);
+        
+        
+	    return new Result(instance, sol_ini, Result.ExitCause.Timeout);
     }
 
     /** Returns a list of all blocks of the critical path. */
@@ -163,13 +173,14 @@ public class DescentSolver implements Solver {
 
     /** For a given block, return the possible swaps for the Nowicki and Smutnicki neighborhood */
     List<Swap> neighbors(Block block) {
-    	List<Swap> swaps = new ArrayList<Swap>();
-    	
-    	for (int i = 0; i<block.lastTask-1; i++) {
-      		 swaps.add(new Swap(block.machine, block.firstTask + i, block.firstTask + (i+1)));
-    	}
-    	
-    	return swaps;    
+    			
+	  List<Swap> swaps = new ArrayList<Swap>();
+	  int size_block = block.lastTask - block.firstTask;
+	  for (int i = 0; i<size_block; i++) { 
+		  swaps.add(new Swap(block.machine,block.firstTask + i, block.firstTask + (i+1))); }
+	  
+	  return swaps;
+		   
     }
 
 }

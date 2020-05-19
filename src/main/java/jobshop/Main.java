@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import jobshop.solvers.BasicSolver;
+import jobshop.solvers.DescentSolver;
 import jobshop.solvers.GreedySolver;
 import jobshop.solvers.GreedySolver.Priority;
 import jobshop.solvers.RandomSolver;
@@ -26,6 +27,7 @@ public class Main {
         solvers = new HashMap<>();
         solvers.put("basic", new BasicSolver());
         solvers.put("random", new RandomSolver());
+        solvers.put("descent", new DescentSolver());
         solvers.put("SPT", new GreedySolver(Priority.SPT));
         solvers.put("LRPT", new GreedySolver(Priority.LRPT));
         solvers.put("LPT", new GreedySolver(Priority.LPT));
