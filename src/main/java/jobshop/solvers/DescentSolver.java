@@ -101,17 +101,12 @@ public class DescentSolver implements Solver {
 
                 
             	List<Block> block_list = blocksOfCriticalPath(best_order);
-                
+            
                 for (int i=0 ; i<block_list.size(); i++) {
                 	
                 	Block block = block_list.get(i);
-                	System.out.println("first");
-                	System.out.println(block.firstTask);
-                	System.out.println("last");
-                	System.out.println(block.lastTask);
                 	
                 	List<Swap> neighbors_list = neighbors(block);
-                	System.out.println(neighbors_list.size());
                 	
                 	for (int n = 0; n< neighbors_list.size(); n++) {
                     	
@@ -142,32 +137,57 @@ public class DescentSolver implements Solver {
 
     /** Returns a list of all blocks of the critical path. */
     List<Block> blocksOfCriticalPath(ResourceOrder order) {
-		 Schedule s = order.toSchedule();
-		 List<Task> path = s.criticalPath();
-	     List<Block> blocks = new ArrayList<Block>();
-	     
-	     //block initial
-	     Task task_0 = path.get(0);
-	     int current_machine = order.instance.machine(task_0);
-	     int first = Arrays.asList(order.tasksByMachine[current_machine]).indexOf(task_0);
-	     int last = first;
-	     
-	     for (int i = 0; i < path.size(); i++) {
-	    	 Task t =path.get(i);
-	    	 if(order.instance.machine(t) == current_machine) {
-	    		 last ++;
-	    	 }else {
-	    		 if (first != last) {
-	    			 blocks.add(new Block(current_machine,first,last));
-	    		 }
-	    		 current_machine = order.instance.machine(t);
-	    		 
-	    		 first =  Arrays.asList(order.tasksByMachine[current_machine]).indexOf(t);
-	    		 last = first;
-	    	 }
-	    	 
-	     }
-	     return blocks;
+    	
+	  Schedule s = order.toSchedule(); 
+	  List<Task> path = s.criticalPath();
+	  List<Block> blocks = new ArrayList<Block>();
+	  
+	  //ini
+	  int current_machine = -1; 
+
+	  int first ;
+	  int  last ;
+	  
+	  for(Task t : path) { 
+		  //initialisation
+		  if(current_machine == -1) {
+			  current_machine = order.instance.machine(t);
+			  first = Arrays.asList(order.tasksByMachine[current_machine]).indexOf(t); 
+			  last = first; 
+		  }else if(current_machine == order.instance.machine(t)) { 
+			  last++; 
+		  } else {
+			  if(last != first) { 
+				  blocks.add(new Block(current_machine,first,last)); 
+				  }
+			  current_machine = order.instance.machine(t); 
+			  first = Arrays.asList(order.tasksByMachine[current_machine]).indexOf(t); 
+			  last = first;
+			  }
+		  }
+	
+	  return blocks;
+    	
+		
+		/*
+		 * List<Block> blocks = new ArrayList<Block>();
+		 * 
+		 * List<Task> critical_path = order.toSchedule().criticalPath();
+		 * 
+		 * int currentMachine = -1; int start = -1; int end = -1;
+		 * 
+		 * for(Task t : critical_path) { if(currentMachine == -1) { currentMachine =
+		 * order.instance.machine(t); start =
+		 * Arrays.asList(order.tasksByMachine[currentMachine]).indexOf(t); end = start;
+		 * } else if(currentMachine == order.instance.machine(t)) { end++; } else {
+		 * if(start != end) { blocks.add(new Block(currentMachine,start,end)); }
+		 * currentMachine = order.instance.machine(t); start =
+		 * Arrays.asList(order.tasksByMachine[currentMachine]).indexOf(t); end = start;
+		 * } }
+		 * 
+		 * return blocks;
+		 */
+		 
 
     }
 
