@@ -35,6 +35,8 @@ public class Main {
         solvers.put("LPT", new GreedySolver(Priority.LPT));
         solvers.put("SRPT", new GreedySolver(Priority.SRPT));
         solvers.put("EST_SPT", new GreedySolver(Priority.EST_SPT));
+        solvers.put("EST_LPT", new GreedySolver(Priority.EST_LPT));
+        solvers.put("EST_SRPT", new GreedySolver(Priority.EST_SRPT));
         solvers.put("EST_LRPT", new GreedySolver(Priority.EST_LRPT));
 
         // add new solvers here

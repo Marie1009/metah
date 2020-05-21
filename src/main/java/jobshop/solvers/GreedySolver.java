@@ -14,7 +14,7 @@ import jobshop.encodings.Task;
 public class GreedySolver implements Solver{
 
 	
-	public enum Priority {SPT,LPT,SRPT, LRPT,EST_SPT,EST_LRPT};
+	public enum Priority {SPT,LPT,SRPT, LRPT,EST_SPT,EST_LRPT,EST_LPT,EST_SRPT};
 	private Priority priority;
 	
 	private int start_times[][];
@@ -105,7 +105,13 @@ public class GreedySolver implements Solver{
 	    }else if ((this.priority).equals(Priority.EST_LRPT)) {
             return getEST_LRPT(todo,instance,done);
             
-	    }else {
+	    }else if ((this.priority).equals(Priority.EST_LPT)) {
+            return getEST_LPT(todo,instance);
+            
+        }else if ((this.priority).equals(Priority.EST_SRPT)) {
+            return getEST_SRPT(todo,instance,done);
+            
+        }else {
 	    	return todo.get(0);
 	    }
 	         
@@ -115,7 +121,7 @@ public class GreedySolver implements Solver{
 
 	private Task getSPT(ArrayList<Task> tasks, Instance instance) {
 		int time = Integer.MAX_VALUE;
-		Task chosen_task = null;
+		Task chosen_task = tasks.get(0);
 		for(Task t:tasks) {
 			if (instance.duration(t)< time) {
 				chosen_task = t;
@@ -129,10 +135,11 @@ public class GreedySolver implements Solver{
 
 	private Task getLPT(ArrayList<Task> tasks, Instance instance) {
 		int time = Integer.MIN_VALUE;
-		Task chosen_task = null;
+		Task chosen_task = tasks.get(0);
 		for(Task t:tasks) {
 			if (instance.duration(t)> time) {
 				chosen_task = t;
+				time = instance.duration(t);
 			}
 		}
 		return chosen_task;
@@ -142,34 +149,39 @@ public class GreedySolver implements Solver{
 
 		private Task getSRPT(ArrayList<Task> tasks, Instance instance, ArrayList<Task> done) {
 			
-			int mintime = Integer.MAX_VALUE;
-			int dureejob=0;
-			int job=-1;
-	        Task taskMin = null;
+			int[] dureejobs = new int[instance.numJobs];
 			
-	        for (Task t : tasks){
-				
-				int j=t.job;
-				
-	            for(int k=0; k< instance.numTasks; k++){
-					
-					if (!done.contains(new Task(j,k))) {
-						dureejob = dureejob+instance.duration(j,k);
-					}
-				}
-				
-				if (dureejob != 0 && dureejob < mintime){
-	                mintime = dureejob;
-	                dureejob = 0;
-	                job = j;
-	            }
+			for(int i = 0; i<instance.numJobs;i++) {
+	        	int dureejob=0;
+	        	for (int j =0; j<instance.numTasks; j++) {
+	        		dureejob += instance.duration(i,j);
+	        	}
+	        	dureejobs[i] = dureejob;
+	        	//System.out.println("durée job : " + dureejob);
 	        }
-			
-	        for (Task t : tasks){
-	            if (t.job == job) {
-	                taskMin = t;
-	                break;
-	            }
+	        
+	        int minValue = Integer.MAX_VALUE; 
+	        int index_min = 0;
+	        
+	        for(int i=0;i < dureejobs.length;i++){ 
+	          if(dureejobs[i] < minValue){ 
+	             minValue = dureejobs[i]; 
+	             index_min = i;
+	          } 
+	        } 
+	       // System.out.println("max value :"+ maxValue);
+	        //System.out.println("index max "+ index_max);
+	       // int longerjob = Arrays.asList(dureejobs).indexOf(maxValue);
+	        
+	        Task taskMin = tasks.get(0);
+	        
+	        for(Task t : tasks) {
+	        	//System.out.println("numjob tache" + t.job);
+	        	if(t.job == index_min) {
+	        		taskMin = t;
+	        		break;
+	        	}
+	        	
 	        }
 			
 	        
@@ -225,16 +237,23 @@ public class GreedySolver implements Solver{
 		
 		ArrayList<Task> beginners = selectEST(tasks,instance);
 
-		int time = Integer.MAX_VALUE;
-		Task chosen_task = null;
-		for(Task t:beginners) {
-			if (instance.duration(t)< time) {
-				chosen_task = t;
-			}
-		}
-		return chosen_task;
+		return getSPT(beginners, instance);
 	}
 	
+	
+private Task getEST_LPT(ArrayList<Task> tasks, Instance instance) {
+		
+		ArrayList<Task> beginners = selectEST(tasks,instance);
+
+		return getLPT(beginners, instance);
+		
+	}
+private Task getEST_SRPT(ArrayList<Task> tasks, Instance instance,ArrayList<Task> done) {
+	
+	ArrayList<Task> beginners = selectEST(tasks,instance);
+
+	return getSRPT(beginners, instance,done);
+}
 private Task getEST_LRPT(ArrayList<Task> tasks, Instance instance, ArrayList<Task> done) {
 		//System.out.println(tasks.size());
 		ArrayList<Task> beginners = selectEST(tasks,instance);
