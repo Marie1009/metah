@@ -39,6 +39,11 @@ public class DescentSolver implements Solver {
             this.firstTask = firstTask;
             this.lastTask = lastTask;
         }
+        
+        public String toString()
+        {
+        	return "[m=" + machine + ", [" + firstTask + ", " + lastTask + "]]";
+        }
     }
 
     /**
@@ -87,6 +92,7 @@ public class DescentSolver implements Solver {
        
         ResourceOrder best_order = new ResourceOrder(sol_ini);
         
+                
        // int debut_makespan = sol_ini.makespan(); 
        // System.out.println("debut");
         //System.out.println(debut_makespan);
@@ -101,6 +107,9 @@ public class DescentSolver implements Solver {
         		     
         		found_best = false;
             	List<Block> block_list = blocksOfCriticalPath(best_order);
+            	
+            	//System.out.print("\n" + block_list + "\n");
+       	
             	int makespan = best_order.toSchedule().makespan();
             	ResourceOrder best_local = best_order;
             	int best_makespan = Integer.MAX_VALUE ; 
@@ -114,7 +123,7 @@ public class DescentSolver implements Solver {
                 	
                 	for (int n = 0; n< neighbors_list.size(); n++) {
                     	
-                		ResourceOrder test_order = best_order;
+                		ResourceOrder test_order = best_order.copy();
                 		
                 		Swap swap = neighbors_list.get(n);
                 		swap.applyOn(test_order);
@@ -122,23 +131,25 @@ public class DescentSolver implements Solver {
                 		Schedule new_sched = test_order.toSchedule();
                 		                    	                		
                 		if(new_sched != null && new_sched.isValid()) {
+                			
                 			int new_makespan = new_sched.makespan();
+                			
                 			//si le makespan est meilleur on update la solution
                 			if(new_makespan < best_makespan)  {
                 				best_makespan = new_makespan;
-                				best_local = test_order;
+                				best_local = test_order.copy();
                 				found_best = true;
                 				//System.out.println("better");
                 		        //System.out.println(new_makespan);
                 			}
                 		            			            			
                 		}
-            			
+        			
                 	}
                }
                 
                 if (best_makespan < makespan) {
-                	best_order = best_local;
+                	best_order = best_local.copy();
                 }
                
         	
@@ -152,8 +163,7 @@ public class DescentSolver implements Solver {
     /** Returns a list of all blocks of the critical path. */
     List<Block> blocksOfCriticalPath(ResourceOrder order) {
     	
-	  Schedule s = order.toSchedule();
-	  List<Task> path = s.criticalPath();
+	  List<Task> path = order.toSchedule().criticalPath();
 	  List<Block> blocks = new ArrayList<Block>();
 	  
 	  //ini

@@ -1,5 +1,8 @@
 package jobshop.solvers;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import jobshop.Instance;
 import jobshop.Result;
@@ -177,38 +180,42 @@ public class GreedySolver implements Solver{
 
 	private Task getLRPT(ArrayList<Task> tasks, Instance instance, ArrayList<Task> done) {
 	
-		
-		int maxtime = Integer.MIN_VALUE;
-		int dureejob=0;
-		int job=-1;
-        Task taskMin = null;
-		
-        for (Task t : tasks){
-			
-			int j=t.job;
-			
-            for(int k=0; k< instance.numTasks; k++){
 				
-				if (!done.contains(new Task(j,k))) {
-					dureejob = dureejob+instance.duration(j,k);
-				}
-			}
-			
-			if (dureejob != 0 && dureejob > maxtime){
-                maxtime = dureejob;
-                dureejob = 0;
-                job = j;
-            }
-        }
+		int[] dureejobs = new int[instance.numJobs];
 		
-        for (Task t : tasks){
-            if (t.job == job) {
-                taskMin = t;
-                break;
-            }
+		for(int i = 0; i<instance.numJobs;i++) {
+        	int dureejob=0;
+        	for (int j =0; j<instance.numTasks; j++) {
+        		dureejob += instance.duration(i,j);
+        	}
+        	dureejobs[i] = dureejob;
+        	//System.out.println("durée job : " + dureejob);
         }
-		
         
+        int maxValue = Integer.MIN_VALUE; 
+        int index_max = 0;
+        
+        for(int i=0;i < dureejobs.length;i++){ 
+          if(dureejobs[i] > maxValue){ 
+             maxValue = dureejobs[i]; 
+             index_max = i;
+          } 
+        } 
+       // System.out.println("max value :"+ maxValue);
+        //System.out.println("index max "+ index_max);
+       // int longerjob = Arrays.asList(dureejobs).indexOf(maxValue);
+        
+        Task taskMin = tasks.get(0);
+        
+        for(Task t : tasks) {
+        	//System.out.println("numjob tache" + t.job);
+        	if(t.job == index_max) {
+        		taskMin = t;
+        		break;
+        	}
+        	
+        }
+                
         return taskMin;
 		
 	}
@@ -228,9 +235,9 @@ public class GreedySolver implements Solver{
 	}
 	
 private Task getEST_LRPT(ArrayList<Task> tasks, Instance instance, ArrayList<Task> done) {
-		System.out.println(tasks.size());
+		//System.out.println(tasks.size());
 		ArrayList<Task> beginners = selectEST(tasks,instance);
-		System.out.println(beginners.size());
+		//System.out.println(beginners.size());
 		Task taskMin = getLRPT(beginners, instance, done);
 	
 		
@@ -244,39 +251,36 @@ private Task getEST_LRPT(ArrayList<Task> tasks, Instance instance, ArrayList<Tas
 	private ArrayList<Task> selectEST(ArrayList<Task> todo, Instance instance){
 		
 		
-		
-		ArrayList<Task> beginners = new ArrayList<Task>();
-		int EST = Integer.MAX_VALUE;
+		 ArrayList<Task> tachesFaiseablesEST = new ArrayList<Task>();
 
-		for (Task t : todo) {
-			
-			 // compute the earliest start time (est) of the task
-			int est;
-			if(t.task == 0) {
-			  est = 0;
-			} else {
-			 est = this.start_times[t.job][t.task-1] + instance.duration(t.job, t.task-1);
-			}
-	        est = Math.max(est, releaseTimeOfMachine[instance.machine(t)]);
-	        
-	        this.start_times[t.job][t.task] = est;
-	        
-	        // increase the release time of the machine
-	        releaseTimeOfMachine[instance.machine(t)] = est + instance.duration(t.job, t.task);
-	        
-	        if (est<EST) {
-	        	EST = est;
+	        int EST = Integer.MAX_VALUE;
+	      
+		  
+	        for (Task t : todo){
+	            int machine = instance.machine(t.job, t.task);
+	    
+	            int test=0;
+				
+	            if(t.task == 0){
+	                test = 0;
+	            } else{
+	                test = start_times[t.job][t.task-1] + instance.duration(t.job, t.task-1);
+	            }
+	            test = Math.max(test, releaseTimeOfMachine[machine]);
+	            start_times[t.job][t.task] = test;
+
+	            if (test < EST){
+	                EST = test;
+	            }
 	        }
-		}
-		
-		for(Task t : todo) {
-			if (start_times[t.job][t.task] == EST) {
-				beginners.add(t);
-			}
-		}
-		
-		
-		return beginners;
+
+
+	        for (Task t : todo){
+	            if (start_times[t.job][t.task] == EST){
+	                tachesFaiseablesEST.add(t);
+	            }
+	        }
+	        return tachesFaiseablesEST;
 	}
 }
 

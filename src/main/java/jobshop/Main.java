@@ -29,7 +29,7 @@ public class Main {
         solvers.put("basic", new BasicSolver());
         solvers.put("random", new RandomSolver());
         solvers.put("descent", new DescentSolver());
-        solvers.put("taboo", new TabooSolver(10,10));
+        solvers.put("taboo", new TabooSolver(50,10));
         solvers.put("SPT", new GreedySolver(Priority.SPT));
         solvers.put("LRPT", new GreedySolver(Priority.LRPT));
         solvers.put("LPT", new GreedySolver(Priority.LPT));
