@@ -96,29 +96,28 @@ public class TabooSolver implements Solver {
     @Override
     public Result solve(Instance instance, long deadline) {
 
-    	Schedule sol_ini = new GreedySolver(Priority.EST_SPT).solve(instance, deadline).schedule;  
+    	Schedule sol_ini = new GreedySolver(Priority.EST_LRPT).solve(instance, deadline).schedule;  
         
         ResourceOrder best_order = new ResourceOrder(sol_ini);
-        
-       
-        
+            
         this.sTaboo = new int[instance.numJobs * instance.numTasks][instance.numJobs * instance.numTasks] ;
        // int debut_makespan = sol_ini.makespan(); 
-       // System.out.println("debut");
+        //System.out.println("debut");
         //System.out.println(debut_makespan);
         
-       // boolean found_best = true;
+        boolean found_best = true;
         // on continue a chercher tant que la solution s'améliore
         int k = 0;
-        while (k< this.maxIter ) {
+        while (k< this.maxIter && found_best) {
         	
         	if(System.currentTimeMillis() > deadline) {
     			return new Result(instance, best_order.toSchedule() , Result.ExitCause.Timeout);
         	}else {
         		     
-        		//found_best = false;
+        		found_best = false;
             	List<Block> block_list = blocksOfCriticalPath(best_order);
-            	int makespan = best_order.toSchedule().makespan();
+            	//int makespan = best_order.toSchedule().makespan();
+            	
             	ResourceOrder best_local = best_order;
             	int best_makespan = Integer.MAX_VALUE ; 
             	Swap best_swap = null;
@@ -129,15 +128,14 @@ public class TabooSolver implements Solver {
                 	
                 	List<Swap> neighbors_list = neighbors(block);
                 	
-                	
-                	
+       	
                 	for (int n = 0; n< neighbors_list.size(); n++) {
                     	
                 		ResourceOrder test_order = best_order.copy();
                 		
                 		Swap swap = neighbors_list.get(n);
                 		
-                		if(!check_taboo(swap, k, test_order)) {
+                		if(check_taboo(swap, k, test_order)) {
                 			swap.applyOn(test_order);
 
                     		Schedule new_sched = test_order.toSchedule();
@@ -145,29 +143,31 @@ public class TabooSolver implements Solver {
                     		if(new_sched != null && new_sched.isValid()) {
                     			
                     			int new_makespan = new_sched.makespan();
-                    			
+                    			//System.out.println("new makespan :" + new_makespan);
                     			//si le makespan est meilleur on update la solution
                     			if(new_makespan < best_makespan)  {
-                    				best_makespan = new_makespan;
+                    				best_makespan = new_makespan;                   				
                     				best_local = test_order.copy();
                     				best_swap = swap;
-                    				//found_best = true;
+                    				
+                    				
+                    				found_best = true;
                     				//System.out.println("better");
                     		        //System.out.println(new_makespan);
                     				
                     			}           			            			
                     		}	
                 		}    			
-                	}
-                	
+                	}             	
                }
+                //System.out.println("best_makespan : " + best_makespan);
                 if(best_swap != null) {
         			addTaboo(best_swap, best_local,k);
         		}
                 k++;
-                if (best_makespan < makespan) {
-                	best_order = best_local.copy();
-                }
+                //if (best_makespan < makespan) {
+                best_order = best_local.copy();
+                //}
                
         	
         	}
@@ -185,7 +185,7 @@ public class TabooSolver implements Solver {
     private boolean check_taboo(Swap swap, int k, ResourceOrder order) {
     	Task task1 = order.tasksByMachine[swap.machine][swap.t1] ; 
 		Task task2 = order.tasksByMachine[swap.machine][swap.t2] ; 
-		return k < sTaboo[task1.job * order.instance.numTasks + task1.task][task2.job * order.instance.numTasks+task2.task] ;
+		return k >= sTaboo[task1.job * order.instance.numTasks + task1.task][task2.job * order.instance.numTasks+task2.task] ;
     }
 
     /** Returns a list of all blocks of the critical path. */
@@ -228,12 +228,13 @@ public class TabooSolver implements Solver {
     List<Swap> neighbors(Block block) {
     	
     	List<Swap> swaps = new ArrayList<Swap>();
+    	
   	  int size_block = block.lastTask - block.firstTask;
   	  
   	  if(size_block == 1) {
   		  swaps.add(new Swap(block.machine,block.firstTask, block.lastTask)); 
   	  }else {
-  		 swaps.add(new Swap(block.machine,block.firstTask, block.firstTask +1)); 
+  		  swaps.add(new Swap(block.machine,block.firstTask, block.firstTask +1)); 
   		  swaps.add(new Swap(block.machine,block.lastTask -1 , block.lastTask)); 
   	  }
   	  return swaps;

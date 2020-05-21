@@ -88,7 +88,7 @@ public class DescentSolver implements Solver {
 
     public Result solve(Instance instance, long deadline) {
 
-        Schedule sol_ini = new GreedySolver(Priority.EST_SPT).solve(instance, deadline).schedule;  
+        Schedule sol_ini = new GreedySolver(Priority.EST_LRPT).solve(instance, deadline).schedule;  
        
         ResourceOrder best_order = new ResourceOrder(sol_ini);
         

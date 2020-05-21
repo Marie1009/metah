@@ -119,6 +119,7 @@ public class GreedySolver implements Solver{
 		for(Task t:tasks) {
 			if (instance.duration(t)< time) {
 				chosen_task = t;
+				time = instance.duration(t);
 			}
 		}
 		return chosen_task;
