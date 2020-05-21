@@ -42,10 +42,7 @@ public class GreedySolver implements Solver{
 		for (int j=0; j<instance.numJobs;j++) {
 			task_todo.add(new Task(j,0));
 		}
-		
-		
-		
-		
+				
 		while(task_todo.size() != 0) {
 			int wanted_machine = 0;
 
@@ -179,6 +176,7 @@ public class GreedySolver implements Solver{
 	//LRPT (Longest Remaining Processing Time) : donne la priorité à la tâche appartenant au job ayant la plus grande durée
 
 	private Task getLRPT(ArrayList<Task> tasks, Instance instance, ArrayList<Task> done) {
+	
 		
 		int maxtime = Integer.MIN_VALUE;
 		int dureejob=0;
@@ -230,38 +228,11 @@ public class GreedySolver implements Solver{
 	}
 	
 private Task getEST_LRPT(ArrayList<Task> tasks, Instance instance, ArrayList<Task> done) {
+		System.out.println(tasks.size());
 		ArrayList<Task> beginners = selectEST(tasks,instance);
-
+		System.out.println(beginners.size());
+		Task taskMin = getLRPT(beginners, instance, done);
 	
-		int maxtime = Integer.MIN_VALUE;
-		int dureejob=0;
-		int job=-1;
-        Task taskMin = null;
-		
-        for (Task t : beginners){
-			
-			int j=t.job;
-			
-            for(int k=0; k< instance.numTasks; k++){
-				
-				if (!done.contains(new Task(j,k))) {
-					dureejob = dureejob+instance.duration(j,k);
-				}
-			}
-			
-			if (dureejob != 0 && dureejob > maxtime){
-                maxtime = dureejob;
-                dureejob = 0;
-                job = j;
-            }
-        }
-		
-        for (Task t : beginners){
-            if (t.job == job) {
-                taskMin = t;
-                break;
-            }
-        }
 		
         
         return taskMin;
@@ -271,6 +242,8 @@ private Task getEST_LRPT(ArrayList<Task> tasks, Instance instance, ArrayList<Tas
 	
 	
 	private ArrayList<Task> selectEST(ArrayList<Task> todo, Instance instance){
+		
+		
 		
 		ArrayList<Task> beginners = new ArrayList<Task>();
 		int EST = Integer.MAX_VALUE;

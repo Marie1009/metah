@@ -12,8 +12,18 @@ import jobshop.encodings.ResourceOrder;
 import jobshop.encodings.Task;
 import jobshop.solvers.GreedySolver.Priority;
 
-public class DescentSolver implements Solver {
+public class TabooSolver implements Solver {
+	
+	private int maxIter;
+	private int maxTime;
+	private int[][] sTaboo ; 
 
+	
+	public TabooSolver(int maxIter, int maxTime) {
+		super();
+		this.maxIter = maxIter;
+		this.maxTime = maxTime;
+	}
     /** A block represents a subsequence of the critical path such that all tasks in it execute on the same machine.
      * This class identifies a block in a ResourceOrder representation.
      *
@@ -81,78 +91,90 @@ public class DescentSolver implements Solver {
     }
 
 
+    @Override
     public Result solve(Instance instance, long deadline) {
 
-        Schedule sol_ini = new GreedySolver(Priority.EST_SPT).solve(instance, deadline).schedule;  
-       
-        ResourceOrder best_order = new ResourceOrder(sol_ini);
-        
-       // int debut_makespan = sol_ini.makespan(); 
-       // System.out.println("debut");
-        //System.out.println(debut_makespan);
-        
-        boolean found_best = true;
-        // on continue a chercher tant que la solution s'améliore
-        while (found_best ) {
-        	
-        	if(System.currentTimeMillis() > deadline) {
-    			return new Result(instance, best_order.toSchedule() , Result.ExitCause.Timeout);
-        	}else {
-        		     
-        		found_best = false;
-            	List<Block> block_list = blocksOfCriticalPath(best_order);
-            	int makespan = best_order.toSchedule().makespan();
-            	ResourceOrder best_local = best_order;
-            	int best_makespan = Integer.MAX_VALUE ; 
+		//System.out.println("test");
 
+        Schedule sol_ini = new GreedySolver(Priority.EST_SPT).solve(instance, deadline).schedule;  
+        
+        this.sTaboo = new int[instance.numJobs * instance.numTasks][instance.numJobs * instance.numTasks] ;
+        
+        int k =0;
+        // on continue a chercher tant que la solution s'améliore
+        while (k< this.maxIter) {
+
+        	if(System.currentTimeMillis() > deadline) {
+    			return new Result(instance, sol_ini, Result.ExitCause.Timeout);
+        	}else {
+                ResourceOrder best_order = new ResourceOrder(sol_ini);
+                ResourceOrder test_order = new ResourceOrder(sol_ini);
+    			//System.out.println("test");
+
+                
+            	List<Block> block_list = blocksOfCriticalPath(best_order);
+            
                 for (int i=0 ; i<block_list.size(); i++) {
-                	
+
                 	Block block = block_list.get(i);
                 	
                 	List<Swap> neighbors_list = neighbors(block);
                 	
-                	
                 	for (int n = 0; n< neighbors_list.size(); n++) {
                     	
-                		ResourceOrder test_order = best_order;
-                		
                 		Swap swap = neighbors_list.get(n);
-                		swap.applyOn(test_order);
+            			System.out.println("test");
 
-                		Schedule new_sched = test_order.toSchedule();
-                		                    	                		
-                		if(new_sched != null && new_sched.isValid()) {
-                			int new_makespan = new_sched.makespan();
-                			//si le makespan est meilleur on update la solution
-                			if(new_makespan < best_makespan)  {
-                				best_makespan = new_makespan;
-                				best_local = test_order;
-                				found_best = true;
-                				//System.out.println("better");
-                		        //System.out.println(new_makespan);
+                		if(check_taboo(swap,k,test_order)) {
+                			
+                			swap.applyOn(test_order);
+                    		
+                    		Schedule new_sol = test_order.toSchedule();
+                    		int new_makespan = new_sol.makespan();
+                    		//si le makespan est meilleur on update la solution
+                    		
+                			if(new_makespan < sol_ini.makespan()) {
+                				sol_ini= test_order.toSchedule();
+                				addTaboo(swap,test_order,k);     
+                				
+                				System.out.println("better");
+                		        System.out.println(new_makespan);
+                			}else {
+                				//sinon on revient a la solution 
+                        		neighbors_list.get(n).applyOn(test_order);
+
                 			}
-                		            			            			
                 		}
+                		
+                		
+                		k++;
             			
                 	}
-               }
-                
-                if (best_makespan < makespan) {
-                	best_order = best_local;
                 }
-               
-        	
         	}
+        	
         }
         
+        
 	    return new Result(instance, sol_ini, Result.ExitCause.Timeout);
-	    
+    }
+    
+    private void addTaboo(Swap swap, ResourceOrder order, int k) {
+		Task task1 = order.tasksByMachine[swap.machine][swap.t1] ; 
+		Task task2 = order.tasksByMachine[swap.machine][swap.t2] ; 
+		sTaboo[task2.job * order.instance.numTasks+task2.task][task1.job * order.instance.numTasks + task1.task] = k + this.maxTime ; 		
+	}
+    
+    private boolean check_taboo(Swap swap, int k, ResourceOrder order) {
+    	Task task1 = order.tasksByMachine[swap.machine][swap.t1] ; 
+		Task task2 = order.tasksByMachine[swap.machine][swap.t2] ; 
+		return k < sTaboo[task1.job * order.instance.numTasks + task1.task][task2.job * order.instance.numTasks+task2.task] ;
     }
 
     /** Returns a list of all blocks of the critical path. */
     List<Block> blocksOfCriticalPath(ResourceOrder order) {
     	
-	  Schedule s = order.toSchedule();
+	  Schedule s = order.toSchedule(); 
 	  List<Task> path = s.criticalPath();
 	  List<Block> blocks = new ArrayList<Block>();
 	  
@@ -183,26 +205,17 @@ public class DescentSolver implements Solver {
 	  return blocks;
 
     }
+    
 
     /** For a given block, return the possible swaps for the Nowicki and Smutnicki neighborhood */
     List<Swap> neighbors(Block block) {
     			
 	  List<Swap> swaps = new ArrayList<Swap>();
 	  int size_block = block.lastTask - block.firstTask;
+	  for (int i = 0; i<size_block; i++) { 
+		  swaps.add(new Swap(block.machine,block.firstTask + i, block.firstTask + (i+1))); }
 	  
-	  if(size_block == 1) {
-		  swaps.add(new Swap(block.machine,block.firstTask, block.lastTask)); 
-	  }else {
-		 swaps.add(new Swap(block.machine,block.firstTask, block.firstTask +1)); 
-		  swaps.add(new Swap(block.machine,block.lastTask -1 , block.lastTask)); 
-	  }
 	  return swaps;
-		
-		 // for (int i = 0; i<size_block; i++) { swaps.add(new
-		  //Swap(block.machine,block.firstTask + i, block.firstTask + (i+1))); }
-		  
-		 // return swaps;
-		 
 		   
     }
 

@@ -13,6 +13,7 @@ import jobshop.solvers.DescentSolver;
 import jobshop.solvers.GreedySolver;
 import jobshop.solvers.GreedySolver.Priority;
 import jobshop.solvers.RandomSolver;
+import jobshop.solvers.TabooSolver;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
@@ -28,6 +29,7 @@ public class Main {
         solvers.put("basic", new BasicSolver());
         solvers.put("random", new RandomSolver());
         solvers.put("descent", new DescentSolver());
+        solvers.put("taboo", new TabooSolver(10,10));
         solvers.put("SPT", new GreedySolver(Priority.SPT));
         solvers.put("LRPT", new GreedySolver(Priority.LRPT));
         solvers.put("LPT", new GreedySolver(Priority.LPT));
