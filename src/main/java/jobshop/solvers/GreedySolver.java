@@ -33,11 +33,7 @@ public class GreedySolver implements Solver{
 		ArrayList<Task> task_todo = new ArrayList<Task>();
 		ArrayList<Task> task_done = new ArrayList<Task>();
 		
-        // indicate for each task that have been scheduled, its start time
-		start_times = new int [instance.numJobs][instance.numTasks];
-		
-        // for each machine, earliest time at which the machine can be used
-        releaseTimeOfMachine = new int[instance.numMachines];
+       
 
 
 		// initialisation de task_todo
@@ -259,9 +255,7 @@ private Task getEST_LRPT(ArrayList<Task> tasks, Instance instance, ArrayList<Tas
 		ArrayList<Task> beginners = selectEST(tasks,instance);
 		//System.out.println(beginners.size());
 		Task taskMin = getLRPT(beginners, instance, done);
-	
-		
-        
+     
         return taskMin;
 		
 	}
@@ -270,37 +264,45 @@ private Task getEST_LRPT(ArrayList<Task> tasks, Instance instance, ArrayList<Tas
 	
 	private ArrayList<Task> selectEST(ArrayList<Task> todo, Instance instance){
 		
+		 // indicate for each task that have been scheduled, its start time
+		this.start_times = new int [instance.numJobs][instance.numTasks];
 		
-		 ArrayList<Task> tachesFaiseablesEST = new ArrayList<Task>();
+        // for each machine, earliest time at which the machine can be used
+        this.releaseTimeOfMachine = new int[instance.numMachines];
+		
 
-	        int EST = Integer.MAX_VALUE;
-	      
-		  
-	        for (Task t : todo){
-	            int machine = instance.machine(t.job, t.task);
-	    
-	            int test=0;
-				
-	            if(t.task == 0){
-	                test = 0;
-	            } else{
-	                test = start_times[t.job][t.task-1] + instance.duration(t.job, t.task-1);
-	            }
-	            test = Math.max(test, releaseTimeOfMachine[machine]);
-	            start_times[t.job][t.task] = test;
+		ArrayList<Task> beginners = new ArrayList<Task>();
+		int EST = Integer.MAX_VALUE;
 
-	            if (test < EST){
-	                EST = test;
-	            }
+		for (Task t : todo) {
+			
+			 // compute the earliest start time (est) of the task
+			int est;
+			if(t.task == 0) {
+			  est = 0;
+			} else {
+			 est = this.start_times[t.job][t.task-1] + instance.duration(t.job, t.task-1);
+			}
+	        est = Math.max(est, releaseTimeOfMachine[instance.machine(t)]);
+	        
+	        this.start_times[t.job][t.task] = est;
+	        
+	        // increase the release time of the machine
+	        releaseTimeOfMachine[instance.machine(t)] = est + instance.duration(t.job, t.task);
+	        
+	        if (est<EST) {
+	        	EST = est;
 	        }
-
-
-	        for (Task t : todo){
-	            if (start_times[t.job][t.task] == EST){
-	                tachesFaiseablesEST.add(t);
-	            }
-	        }
-	        return tachesFaiseablesEST;
+		}
+		//System.out.println("est : "+EST+ "prio : "+this.priority);
+		for(Task t : todo) {
+			if (start_times[t.job][t.task] == EST) {
+				beginners.add(t);
+			}
+		}
+		
+		
+		return beginners;
 	}
 }
 

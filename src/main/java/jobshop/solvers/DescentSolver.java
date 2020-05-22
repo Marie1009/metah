@@ -88,7 +88,7 @@ public class DescentSolver implements Solver {
 
     public Result solve(Instance instance, long deadline) {
 
-        Schedule sol_ini = new GreedySolver(Priority.EST_LRPT).solve(instance, deadline).schedule;  
+        Schedule sol_ini = new GreedySolver(Priority.EST_SPT).solve(instance, deadline).schedule;  
        
         ResourceOrder best_order = new ResourceOrder(sol_ini);
         
@@ -161,7 +161,7 @@ public class DescentSolver implements Solver {
     }
 
     /** Returns a list of all blocks of the critical path. */
-    List<Block> blocksOfCriticalPath(ResourceOrder order) {
+    static public List<Block> blocksOfCriticalPath(ResourceOrder order) {
     	
 	  List<Task> path = order.toSchedule().criticalPath();
 	  List<Block> blocks = new ArrayList<Block>();
@@ -195,7 +195,7 @@ public class DescentSolver implements Solver {
     }
 
     /** For a given block, return the possible swaps for the Nowicki and Smutnicki neighborhood */
-    List<Swap> neighbors(Block block) {
+    static public List<Swap> neighbors(Block block) {
     			
 	  List<Swap> swaps = new ArrayList<Swap>();
 	  int size_block = block.lastTask - block.firstTask;
